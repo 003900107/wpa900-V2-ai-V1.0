@@ -1,0 +1,83 @@
+//计算有效值（均方根算法）
+void FUN_JF(int phase,MEA_DFT *dft)
+{
+	int i,j;
+	(dft).zero=0;
+	float am=0;
+	for(i=0;i<SAMP_POINT_NBR;i++)
+		{
+		((dft).zero)+=PeriodCycleTab[phase][i];
+		}
+	(dft).zero=((dft).zero)/64;  
+	for(j=0;j<SAMP_POINT_NBR;j++)
+		{
+         ((dft).am)+=(PeriodCycleTab[phase][i]-zero)*(PeriodCycleTab[phase][i]-zero);
+	    }
+	(dft).am=(((dft).am)*2)/64000000;     
+	(dft).am=sqrtf((dft).am);     // 最大值
+} 
+
+
+//DFT
+//short TAB_DFT_64[15]={1019,1004,980,946,903,851,792,724,
+ //                     650,569,483,392,297,200,100}；
+//傅氏计算结果结构体
+typedef struct 
+{
+	signed long 	mea_real;	  //实部
+	signed long 	mea_imag;	  //虚部
+	float 	am;         //幅值
+	float 	phase;	  	//相角
+	float an_real;			//角度的实部
+	float an_imag;			//角度的虚部
+	float real;		//校正的实部
+	float imag;		//校正的虚部
+	short zero;				//零漂
+	unsigned short count;   //平均次数
+}MEA_DFT;
+
+
+VOID FUN_DFT_64(int phase,MEA_DFT *dft)
+{
+    
+	(dft).real=1019*(PeriodCycleTab[phase][1]-PeriodCycleTab[phase][31]-PeriodCycleTab[phase][33]+PeriodCycleTab[phase][63]);
+    ((dft).real)+=1004*(PeriodCycleTab[phase][2]-PeriodCycleTab[phase][30]-PeriodCycleTab[phase][34]+PeriodCycleTab[phase][62]);
+	((dft).real)+=980*(PeriodCycleTab[phase][3]-PeriodCycleTab[phase][29]-PeriodCycleTab[phase][35]+PeriodCycleTab[phase][61]);
+	((dft).real)+=946*(PeriodCycleTab[phase][4]-PeriodCycleTab[phase][28]-PeriodCycleTab[phase][36]+PeriodCycleTab[phase][60]);
+	((dft).real)+=903*(PeriodCycleTab[phase][5]-PeriodCycleTab[phase][27]-PeriodCycleTab[phase][37]+PeriodCycleTab[phase][59]);
+	((dft).real)+=851*(PeriodCycleTab[phase][6]-PeriodCycleTab[phase][26]-PeriodCycleTab[phase][38]+PeriodCycleTab[phase][58]);
+	((dft).real)+=792*(PeriodCycleTab[phase][7]-PeriodCycleTab[phase][25]-PeriodCycleTab[phase][39]+PeriodCycleTab[phase][57]);
+	((dft).real)+=724*(PeriodCycleTab[phase][8]-PeriodCycleTab[phase][24]-PeriodCycleTab[phase][40]+PeriodCycleTab[phase][56]);
+	((dft).real)+=650*(PeriodCycleTab[phase][9]-PeriodCycleTab[phase][23]-PeriodCycleTab[phase][41]+PeriodCycleTab[phase][55]);
+	((dft).real)+=569*(PeriodCycleTab[phase][10]-PeriodCycleTab[phase][22]-PeriodCycleTab[phase][42]+PeriodCycleTab[phase][54]);
+	((dft).real)+=483*(PeriodCycleTab[phase][11]-PeriodCycleTab[phase][21]-PeriodCycleTab[phase][43]+PeriodCycleTab[phase][53]);
+	((dft).real)+=392*(PeriodCycleTab[phase][12]-PeriodCycleTab[phase][20]-PeriodCycleTab[phase][44]+PeriodCycleTab[phase][52]);
+	((dft).real)+=297*(PeriodCycleTab[phase][13]-PeriodCycleTab[phase][19]-PeriodCycleTab[phase][45]+PeriodCycleTab[phase][51]);
+	((dft).real)+=200*(PeriodCycleTab[phase][14]-PeriodCycleTab[phase][18]-PeriodCycleTab[phase][46]+PeriodCycleTab[phase][50]);
+	((dft).real)+=100*(PeriodCycleTab[phase][15]-PeriodCycleTab[phase][17]-PeriodCycleTab[phase][47]+PeriodCycleTab[phase][49]);
+	(dft).real=((dft).real)/1024;
+	((dft).real)+=PeriodCycleTab[phase][0]-PeriodCycleTab[phase][32];
+	(dft).imag=1019*(PeriodCycleTab[phase][47]-PeriodCycleTab[phase][15]-PeriodCycleTab[phase][17]+PeriodCycleTab[phase][49]);
+	((dft).imag)+=1004*(PeriodCycleTab[phase][46]-PeriodCycleTab[phase][14]-PeriodCycleTab[phase][18]+PeriodCycleTab[phase][50]);
+	((dft).imag)+=980*(PeriodCycleTab[phase][45]-PeriodCycleTab[phase][13]-PeriodCycleTab[phase][19]+PeriodCycleTab[phase][51]);
+	((dft).imag)+=946*(PeriodCycleTab[phase][44]-PeriodCycleTab[phase][12]-PeriodCycleTab[phase][20]+PeriodCycleTab[phase][52]);
+	((dft).imag)+=903*(PeriodCycleTab[phase][43]-PeriodCycleTab[phase][11]-PeriodCycleTab[phase][21]+PeriodCycleTab[phase][53]);
+	((dft).imag)+=851*(PeriodCycleTab[phase][42]-PeriodCycleTab[phase][10]-PeriodCycleTab[phase][22]+PeriodCycleTab[phase][54]);
+	((dft).imag)+=792*(PeriodCycleTab[phase][41]-PeriodCycleTab[phase][9]-PeriodCycleTab[phase][23]+PeriodCycleTab[phase][55]);
+	((dft).imag)+=724*(PeriodCycleTab[phase][40]-PeriodCycleTab[phase][8]-PeriodCycleTab[phase][24]+PeriodCycleTab[phase][56]);
+	((dft).imag)+=650*(PeriodCycleTab[phase][39]-PeriodCycleTab[phase][7]-PeriodCycleTab[phase][25]+PeriodCycleTab[phase][57]);
+	((dft).imag)+=569*(PeriodCycleTab[phase][38]-PeriodCycleTab[phase][6]-PeriodCycleTab[phase][26]+PeriodCycleTab[phase][58]);
+	((dft).imag)+=483*(PeriodCycleTab[phase][37]-PeriodCycleTab[phase][5]-PeriodCycleTab[phase][27]+PeriodCycleTab[phase][59]);
+	((dft).imag)+=392*(PeriodCycleTab[phase][36]-PeriodCycleTab[phase][4]-PeriodCycleTab[phase][28]+PeriodCycleTab[phase][60]);
+	((dft).imag)+=297*(PeriodCycleTab[phase][35]-PeriodCycleTab[phase][3]-PeriodCycleTab[phase][29]+PeriodCycleTab[phase][61]);
+	((dft).imag)+=200*(PeriodCycleTab[phase][34]-PeriodCycleTab[phase][2]-PeriodCycleTab[phase][30]+PeriodCycleTab[phase][62]);
+	((dft).imag)+=100*(PeriodCycleTab[phase][33]-PeriodCycleTab[phase][1]-PeriodCycleTab[phase][31]+PeriodCycleTab[phase][63]);
+	(dft).imag=((dft).imag)/1024;
+	((dft).imag)+=PeriodCycleTab[phase][48]-PeriodCycleTab[phase][16];
+	(dft).am=((dft).real)*((dft).real)+((dft).imag)*((dft).imag);
+    (dft).am=sqrtf((dft).am);
+
+}
+
+
+

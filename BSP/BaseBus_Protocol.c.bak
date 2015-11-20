@@ -1,0 +1,319 @@
+/*
+  *     @arg I2C_EVENT_SLAVE_ADDRESS_MATCHED   : EV1
+  *     @arg I2C_EVENT_SLAVE_BYTE_RECEIVED     : EV2
+  *     @arg I2C_EVENT_SLAVE_BYTE_TRANSMITTED  : EV3
+  *     @arg I2C_EVENT_SLAVE_ACK_FAILURE       : EV3-2
+  *     @arg I2C_EVENT_MASTER_MODE_SELECT      : EV5
+  *     @arg I2C_EVENT_MASTER_MODE_SELECTED    : EV6
+  *     @arg I2C_EVENT_MASTER_BYTE_RECEIVED    : EV7
+  *     @arg I2C_EVENT_MASTER_BYTE_TRANSMITTED : EV8
+  *     @arg I2C_EVENT_MASTER_MODE_ADDRESS10   : EV9
+  *     @arg I2C_EVENT_SLAVE_STOP_DETECTED     : EV4
+
+*/
+
+
+#include "stm32f10x_i2c.h"
+#include "bsp.h"
+
+unsigned char TxBuffer[8];
+unsigned char RxBuffer[8];
+uint8_t CommingCall=0;
+
+#define HEADCHECK(a,b)  ((a==0xA5&&b==0x5A)?1:0)
+
+__IO uint8_t Tx_Idx=0;
+__IO uint8_t Rx_Idx=0;
+#ifdef BASE_CORE
+void DoSelect(unsigned char DoSeq)
+{
+		TxBuffer[0]=0xA5;
+		TxBuffer[1]=0x5A;
+		TxBuffer[2]=DO_SEL;
+		TxBuffer[3]=DoSeq;
+		TxBuffer[4]=0x00;
+		TxBuffer[5]=0x00;
+		TxBuffer[6]=0x00;
+		TxBuffer[7]=0x00;
+		i2c_buffer_write(TxBuffer,DO_BOARD_ID,TxBuffer[0])
+}
+
+void DoExecute(unsigned char DoSeq)
+{
+		TxBuffer[0]=0xA5;
+		TxBuffer[1]=0x5A;
+		TxBuffer[2]=DO_EXE;
+		TxBuffer[3]=DoSeq;
+		TxBuffer[4]=0x00;
+		TxBuffer[5]=0x00;
+		TxBuffer[6]=0x00;
+		TxBuffer[7]=0x00;
+		i2c_buffer_write(TxBuffer,DO_BOARD_ID,TxBuffer[0])
+}
+#endif
+#ifdef DO_SUBCORE
+void DoCheck(unsigned char DoSeq)
+{
+		TxBuffer[0]=0xA5;
+		TxBuffer[1]=0x5A;
+		TxBuffer[2]=DO_CHK;
+		TxBuffer[3]=DoSeq;
+		TxBuffer[4]=0x00;
+		TxBuffer[5]=0x00;
+		TxBuffer[6]=0x00;
+		TxBuffer[7]=0x00;
+		
+		CommingCall=0;
+}
+#endif
+#ifdef BASE_CORE
+void i2c_buffer_write(unsigned char *pBuffer, unsigned char SlaveAddr)
+{
+	usigned char i;
+	uint16_t torlerance;
+	// Start the I2C
+	I2C_GenerateSTART(I2C1,ENABLE);
+
+      //not recommanded, stupid way
+  torlerance=0xFFFF;    
+	while(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_MODE_SELECT))
+	{
+		 if (torlerance-- == 0)
+     return 0;	
+	}
+
+	I2C_Send7bitAddress(I2C1,SlaveAddr,I2C_Direction_Transmitter);
+
+	// when get ACK, means Set Success
+	torlerance=0xFFFF;
+	while(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED))
+	{
+		 if (torlerance-- == 0)
+     return 0;	
+	}
+
+	for(i=0;i<8;i++)
+	{
+		I2C_SendData(I2C1, *(pBuffer+i));
+	  while(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+  }
+	I2C_GenerateSTOP(I2C1, ENABLE);
+}
+
+
+
+/*******************************************************************************
+* Function Name  : i2c_24c_page_wrtie
+* Description    : basic API, page Write
+* Input          : u8 *pBuffer--buffer for send, u8 Addr---Address to Write, u8 how many bytes to write, 
+* Output         : None
+* Return         : None
+*******************************************************************************/
+void i2c_buffer_read(unsigned char *pBuffer, unsigned char SlaveAddr)
+{
+	unsigned char NumToRead=8;
+	//open I2C
+	I2C_GenerateSTART(I2C1, ENABLE);
+  
+  torlerance=0xFFFF;
+	while(!(I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_MODE_SELECT)))
+	{
+		 if (torlerance-- == 0)
+     return 0;	
+	}
+
+	I2C_Send7bitAddress(I2C1,SlaveAddr,I2C_Direction_Receiver);
+
+  torlerance=0xFFFF;
+	while(!(I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED)))
+	{
+		 if (torlerance-- == 0)
+     return 0;	
+	}
+		
+	 while(NumToRead)
+		{
+			if(NumToRead==1)
+				{
+					I2C_AcknowledgeConfig(I2C1, DISABLE);
+
+					I2C_GenerateSTOP(I2C1, ENABLE);
+				}
+
+			if((I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_BYTE_RECEIVED)))
+				{
+					*pBuffer = I2C_ReceiveData(I2C1);
+
+					pBuffer++;
+
+					NumToRead--;
+				}
+		}
+
+	I2C_AcknowledgeConfig(I2C1, ENABLE);
+	return NumToRead;
+  
+}
+#endif
+/*void i2c_slavemode()
+{
+	switch (I2C_GetLastEvent(I2C1))
+	{
+	    // 从模式发送
+	    case I2C_EVENT_SLAVE_TRANSMITTER_ADDRESS_MATCHED:
+	    {
+	        txSending = TRUE;
+	        I2C_SendData(I2C1, txBuf[txIndex++]);
+	        break;
+	    }
+	    // 用例程的I2C_EVENT_SLAVE_BYTE_TRANSMITTED似乎无法正确运行
+	    // I2C_EVENT_SLAVE_BYTE_TRANSMITTING自己定义的，值为0x00060080
+	    case I2C_EVENT_SLAVE_BYTE_TRANSMITTIEED:
+	    {
+	        I2C_SendData(I2C1, txBuf[txIndex++]);
+	
+	        if(_txIndex >= txLength)
+	        {
+	            // 传送完成后要拉高请求端口
+	            setSwitchState(SW_I2C_IRQ, 1);
+	            _txSending = FALSE;
+	        }
+	        break;
+	    }
+	
+	    // 从模式接收
+	    case I2C_EVENT_SLAVE_RECEIVER_ADDRESS_MATCHED:
+	    {
+	        _txSending = TRUE;
+	        _rxDataIndex = 0;
+	        _rxDataLength = 0;
+	        break;
+	    }
+	    case I2C_EVENT_SLAVE_BYTE_RECEIVED:
+	    {
+	        if(!_rxBufFull && (_rxDataLength<=MAX_I2C_DATA))
+	        {
+	            // 接收的数据保存在循环队列的节点里，队列用二维数据定义，第一维为队列节点，第二维为节点的数据
+	            _rxBuf[_rxBufTail][_rxDataIndex++] = I2C_ReceiveData(I2C1);
+	            _rxDataLength++;
+	        }
+	        break;
+	    }
+	    case I2C_EVENT_SLAVE_STOP_DETECTED:
+	    {
+	        _rxBufTail++;
+	        _txSending = FALSE;
+	
+	        if(_rxBufTail >= MAX_I2C_RX)
+	        {
+	            _rxBufTail = 0;
+	        }
+	
+	        if(_rxBufTail == _rxBufHead)
+	        {
+	            _rxBufFull = TRUE;
+	        }
+	
+	        dispatchEvent(EVENT_I2C_RECEIVED);
+	
+	        // 这一句一定要加
+	        I2C_Cmd(I2C1, ENABLE);
+	        break;
+	    }
+	}
+}*/
+
+#ifdef BUS_SUBCORE
+void _I2C1_EV_IRQHandler(void)
+{
+    __IO uint32_t SR1Register =0;
+    __IO uint32_t SR2Register =0;
+
+#ifdef SLAVE_DMA_USE
+    /* Read SR1 register */
+    SR1Register = I2C1->SR1;
+
+    /* If ADDR is set */
+    if ((SR1Register & 0x0002) == 0x0002)
+    {
+        /* In slave Transmitter/Receiver mode, when using DMA, it is recommended to update the buffer 
+          base address and the buffer size before clearing ADDR flag. In fact, the only
+          period when the slave has control  on the bus(SCL is stretched so master can not initiate 
+          transfers) is the period between ADDR is set and ADDR is cleared. Otherwise, the master can
+          initiate transfers and the buffer size & the buffer address have not yet been updated.*/
+
+        /* Update the DMA channels memory base address and count */
+        I2C_DMAConfig (I2C1, Buffer_Tx1, 0xFFFF, I2C_DIRECTION_TX);
+        I2C_DMAConfig (I2C1, Buffer_Rx1, 0xFFFF, I2C_DIRECTION_RX);
+        /* Clear ADDR by reading SR2 register */
+        SR2Register = I2C1->SR2;
+    }
+#else
+    /* Read the I2C1 SR1 and SR2 status registers */
+    SR1Register = I2C1->SR1;
+    SR2Register = I2C1->SR2;
+
+    /* If I2C1 is slave (MSL flag = 0) */
+    if ((SR2Register &0x0001) != 0x0001)
+    {
+        /* If ADDR = 1: EV1 */
+        if ((SR1Register & 0x0002) == 0x0002)
+        {
+            /* Clear SR1Register and SR2Register variables to prepare for next IT */
+            SR1Register = 0;
+            SR2Register = 0;
+            /* Initialize the transmit/receive counters for next transmission/reception
+            using Interrupt  */
+            Tx_Idx = 0;
+            Rx_Idx = 0;
+        }
+        /* If TXE = 1: EV3 */
+        if ((SR1Register & 0x0080) == 0x0080)
+        {
+            /* Write data in data register */
+            I2C1->DR = TxBuffer[Tx_Idx++];
+            SR1Register = 0;
+            SR2Register = 0;
+        }
+        /* If RXNE = 1: EV2 */
+        if ((SR1Register & 0x0040) == 0x0040)
+        {
+            /* Read data from data register */
+            RxBuffer[Rx_Idx++] = I2C1->DR;
+            SR1Register = 0;
+            SR2Register = 0;
+            if(8==Rx_Idx) CommingCall=0x01;
+        }
+        /* If STOPF =1: EV4 (Slave has detected a STOP condition on the bus */
+        if (( SR1Register & 0x0010) == 0x0010)
+        {
+            I2C1->CR1 |= CR1_PE_Set;
+            SR1Register = 0;
+            SR2Register = 0;
+
+        }
+        
+    } /* End slave mode */
+
+#endif
+
+}
+#endif
+
+void Deal_Comming(void)
+{
+  if(1==CommingCall)	
+  	{
+  	  if(HEADCHECK	(RxBuffer[0],RxBuffer[1]))
+  	  	{
+  	  		switch(RxBuffer[2])
+  	  		{
+  	  			case DO_SEL:
+  	             				DoCheck(RxBuffer[3]);
+  	  				          break;
+  	  			case DO_EXE:	
+  	  		}	
+  	  	}
+  	}
+}
+/*------------------------------End of File------------------------------------------*/

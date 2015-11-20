@@ -1,0 +1,72 @@
+#ifndef __BSP_H
+#define __BSP_H
+#include "stm32f10x.h"
+#include "stm32f10x_conf.h"
+
+#define DiRetThreshold 10
+#define DiActThreshold 10
+
+#define LED4  GPIOA, GPIO_Pin_8
+#define LED5  GPIOC, GPIO_Pin_9
+#define LED7  GPIOC, GPIO_Pin_7
+#define LED8  GPIOC, GPIO_Pin_6
+#define LED9  GPIOD, GPIO_Pin_9
+#define LED10  GPIOD, GPIO_Pin_8
+#define LED11  GPIOB, GPIO_Pin_15
+
+#define DO0  GPIOD, GPIO_Pin_10
+#define DO1  GPIOD, GPIO_Pin_11
+#define DO2  GPIOD, GPIO_Pin_12
+#define DO3  GPIOD, GPIO_Pin_13
+#define DO4  GPIOD, GPIO_Pin_14
+#define DO5  GPIOD, GPIO_Pin_15
+#define DO6  GPIOD, GPIO_Pin_7
+#define DO7  GPIOD, GPIO_Pin_4
+
+#define DI0	 GPIOE,	GPIO_Pin_0
+#define DI1	 GPIOE,	GPIO_Pin_1
+#define DI2	 GPIOE,	GPIO_Pin_2
+#define DI3	 GPIOE,	GPIO_Pin_3
+#define DI4	 GPIOE,	GPIO_Pin_4
+#define DI5	 GPIOE,	GPIO_Pin_5
+#define DI6	 GPIOE,	GPIO_Pin_6
+#define DI7	 GPIOE,	GPIO_Pin_7
+#define DI8	 GPIOE,	GPIO_Pin_8
+#define DI9	 GPIOE,	GPIO_Pin_9
+#define DI10	GPIOE, GPIO_Pin_10
+#define DI11	GPIOE, GPIO_Pin_11
+#define DI12	GPIOE, GPIO_Pin_12
+#define DI13	GPIOE, GPIO_Pin_13
+#define DI14	GPIOE, GPIO_Pin_14
+#define DI15	GPIOE, GPIO_Pin_15
+									
+typedef struct
+{
+ uint8_t Actcnt;
+ uint8_t Retcnt;
+ uint8_t Value; 
+ //uint8_t SOE_Queue[16];	  
+ 
+}DiStatus_Type;
+
+void RCC_Configuration(void);
+void GPIO_Configuration(void);
+void NVIC_Configuration(void);
+void DMA_Configuration(void); 
+void ADC_Configuration(void);
+void USART_Configuration(void);
+void I2C_Configuration(void);
+
+void SysTick_Configuration(void);
+void Delay(u32 nTime);
+void TimingDelay_Decrement(void);
+
+void RelayOut(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin,uint32_t nTime);
+
+void GPIO_DealInputData(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin,uint8_t pos);
+void Di_PostWork(void);
+void DiScanning(void);
+void twinkle(uint8_t times);
+
+#endif
+

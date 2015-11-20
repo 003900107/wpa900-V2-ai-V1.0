@@ -1,0 +1,16 @@
+#ifndef BASEBUSPROTCOL
+#define BASEBUSPROTCOL
+
+#define DO_EXE 0xB3
+#define DO_CHK 0xB2
+#define DO_SEL 0xB1
+
+void _I2C1_EV_IRQHandler(void);
+void DoCheck(unsigned char DoSeq);
+void DoExecute(unsigned char DoSeq);
+void DoSelect(unsigned char DoSeq);
+void i2c_buffer_read(unsigned char *pBuffer, unsigned char SlaveAddr);
+void i2c_buffer_write(unsigned char *pBuffer, unsigned char SlaveAddr);
+void Deal_Comming(void);
+
+#endif
